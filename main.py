@@ -5,8 +5,14 @@
 # wykonać w dowolny sposób we własnym zakresie.
 # =============================================================================
 import numpy as np
+import scipy
+import pickle
+import typing
+import math
+import types
+import pickle
+from inspect import isfunction
 from typing import Callable
-
 
 def func(x: int | float | np.ndarray) -> int | float | np.ndarray:
     """Funkcja wyliczająca wartości funkcji f(x).
@@ -103,7 +109,21 @@ def bisection(
             - Liczba wykonanych iteracji.
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    if f(a) * f(b) > 0:
+        return None
+    if not (isinstance(a, (int, float)) and isinstance(b, (int, float)) and isfunction(f) and isinstance(epsilon, float) and isinstance(max_iter, int)):
+        return None
+    counter = 0
+    while counter < max_iter:
+        counter += 1
+        c = (a + b) / 2
+        if abs(f(c)) < epsilon :
+            return c, counter
+        if f(c) * f(a) < 0:
+            b = c
+        else:
+            a = c
+    return c,counter    
 
 
 def secant(
@@ -130,8 +150,20 @@ def secant(
             - Liczba wykonanych iteracji.
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
 
+    if not (isinstance(a, (int, float)) and isinstance(b, (int, float)) and isfunction(f) and isinstance(epsilon, float) and isinstance(max_iters, int)):
+        return None
+    counter = 1
+    x_prev = b
+    x_prev_prev = a
+    while counter < max_iters:
+        x = x_prev - f(x_prev) * (x_prev - x_prev_prev) / (f(x_prev) - f(x_prev_prev))
+        if( abs(f(x)) < epsilon ):
+            return x,counter
+        x_prev_prev = x_prev
+        x_prev = x
+        counter +=1
+    return x,counter
 
 def difference_quotient(
     f: Callable[[float], float], x: int | float, h: int | float
@@ -150,8 +182,10 @@ def difference_quotient(
         (float): Wartość ilorazu różnicowego.
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
-
+    if not (isfunction(f) and isinstance(x, (int, float)) and isinstance(h,(int, float)) and h != 0):
+        return None
+    else :
+        return (f(x+h) - f(x))/h
 
 def newton(
     f: Callable[[float], float],
@@ -182,4 +216,13 @@ def newton(
             - Liczba wykonanych iteracji.
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    if not (isinstance(a, (int, float)) and isinstance(b, (int, float)) and isfunction(f) and isfunction(df) and isfunction(ddf) and isinstance(epsilon,float) and isinstance(max_iter, int)):
+        return None
+    #if f(a) * f(b) > 0 or ddf(a) * ddf(b) < 0 or df(a) * df(b) < 0:
+    #    return None
+    counter = 0
+    x0 = b 
+    while abs(f(x0)) > epsilon and counter < max_iter:
+        counter += 1
+        x0 = x0 - (f(x0)/df(x0))
+    return x0, counter
