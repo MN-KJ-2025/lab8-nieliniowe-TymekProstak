@@ -5,14 +5,8 @@
 # wykonać w dowolny sposób we własnym zakresie.
 # =============================================================================
 import numpy as np
-import scipy
-import pickle
-import typing
-import math
-import types
-import pickle
-from inspect import isfunction
 from typing import Callable
+
 
 def func(x: int | float | np.ndarray) -> int | float | np.ndarray:
     """Funkcja wyliczająca wartości funkcji f(x).
@@ -109,22 +103,35 @@ def bisection(
             - Liczba wykonanych iteracji.
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
+    if epsilon <= 0 or max_iter <= 0:
+        return None
+    if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+        return None
+    if not isinstance(f, Callable):
+        return None
+    if not isinstance(epsilon, float):
+        return None
     if f(a) * f(b) > 0:
         return None
-    if not (isinstance(a, (int, float)) and isinstance(b, (int, float)) and isfunction(f) and isinstance(epsilon, float) and isinstance(max_iter, int)):
-        return None
-    counter = 0
-    while counter < max_iter:
-        counter += 1
-        c = (a + b) / 2
-        if abs(f(c)) < epsilon :
-            return c, counter
+    if f(a) == 0:
+        return a, 0
+    
+    if f(b) == 0:
+        return b, 0
+    iter_count = 0
+    while iter_count < max_iter:
+        c = (a +b) / 2
+        if abs(f(c)) < epsilon or (b - a) / 2 < epsilon:
+            return c, iter_count + 1
+        iter_count += 1
         if f(c) * f(a) < 0:
             b = c
         else:
             a = c
-    return c,counter    
+    return c, iter_count
 
+
+from typing import Callable
 
 def secant(
     a: int | float,
@@ -133,13 +140,13 @@ def secant(
     epsilon: float,
     max_iters: int,
 ) -> tuple[float, int] | None:
-    """funkcja aproksymująca rozwiązanie równania f(x) = 0 na przedziale [a,b] 
+    """funkcja aproksymująca rozwiązanie równania f(x) = 0 na przedziale [a,b]
     metodą siecznych.
 
     Args:
         a (int | float): Początek przedziału.
         b (int | float): Koniec przedziału.
-        f (Callable[[float], float]): Funkcja, dla której poszukiwane jest 
+        f (Callable[[float], float]): Funkcja, dla której poszukiwane jest
             rozwiązanie.
         epsilon (float): Tolerancja zera maszynowego (warunek stopu).
         max_iters (int): Maksymalna liczba iteracji.
@@ -151,19 +158,38 @@ def secant(
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
 
-    if not (isinstance(a, (int, float)) and isinstance(b, (int, float)) and isfunction(f) and isinstance(epsilon, float) and isinstance(max_iters, int)):
+    if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
         return None
-    counter = 1
-    x_prev = b
-    x_prev_prev = a
-    while counter < max_iters:
-        x = x_prev - f(x_prev) * (x_prev - x_prev_prev) / (f(x_prev) - f(x_prev_prev))
-        if( abs(f(x)) < epsilon ):
-            return x,counter
-        x_prev_prev = x_prev
-        x_prev = x
-        counter +=1
-    return x,counter
+    if not isinstance(epsilon, float) or epsilon <= 0:
+        return None
+    if not isinstance(max_iters, int) or max_iters <= 0:
+        return None
+    if not isinstance(f, Callable):
+        return None
+
+    if f(a) * f(b) > 0:
+        return None
+
+    if f(a) == 0:
+        return a, 0
+
+    if f(b) == 0:
+        return b, 0
+
+    for iter in range(1, max_iters + 1):
+        c = a - (f(a) / (f(b) - f(a))) * (b - a)
+        if abs(f(c)) < epsilon:
+            return c, iter
+        else:
+            if f(a) * f(c) > 0:
+                a = c
+            else:
+                b = c
+    return c, iter
+
+
+
+
 
 def difference_quotient(
     f: Callable[[float], float], x: int | float, h: int | float
@@ -182,10 +208,15 @@ def difference_quotient(
         (float): Wartość ilorazu różnicowego.
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    if not (isfunction(f) and isinstance(x, (int, float)) and isinstance(h,(int, float)) and h != 0):
+    if not isinstance(x, (int, float)):
         return None
-    else :
-        return (f(x+h) - f(x))/h
+    if not isinstance(h, (int, float)) or h == 0:
+        return None
+    if not isinstance(f, Callable):
+        return None
+
+    return (f(x + h) - f(x)) / h
+
 
 def newton(
     f: Callable[[float], float],
@@ -216,13 +247,50 @@ def newton(
             - Liczba wykonanych iteracji.
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    if not (isinstance(a, (int, float)) and isinstance(b, (int, float)) and isfunction(f) and isfunction(df) and isfunction(ddf) and isinstance(epsilon,float) and isinstance(max_iter, int)):
+
+    if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
         return None
-    #if f(a) * f(b) > 0 or ddf(a) * ddf(b) < 0 or df(a) * df(b) < 0:
-    #    return None
-    counter = 0
-    x0 = b 
-    while abs(f(x0)) > epsilon and counter < max_iter:
-        counter += 1
-        x0 = x0 - (f(x0)/df(x0))
-    return x0, counter
+    if not isinstance(epsilon, float) or epsilon <= 0:
+        return None
+    if not isinstance(max_iter, int) or max_iter <= 0:
+        return None
+    if not isinstance(f, Callable):
+        return None
+    if not isinstance(df, Callable):
+        return None
+    if not isinstance(ddf, Callable):
+        return None
+    
+    if f(a) * f(b) > 0:
+        return None
+    
+    if f(a) == 0:
+        return a, 0
+    
+    if f(b) == 0:
+        return b, 0
+    
+    x0 = None
+    if f(a) * ddf(a) > 0:
+        x0 = a
+    elif f(b) * ddf(b) > 0:
+        x0 = b
+    else:
+        return None
+        x0 = (a + b) / 2
+
+    for i in range(1, max_iter + 1):
+        fx = f(x0)
+        dfx = df(x0)
+        if dfx == 0:
+
+            return None
+        x1 = x0 - fx / dfx
+        if abs(f(x1)) < epsilon or abs(x1 - x0) < epsilon:
+            return x1, i
+        x0 = x1
+        if not (a <= x0 <= b):
+            return None
+    return x0, max_iter
+
+    
